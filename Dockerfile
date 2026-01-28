@@ -1,5 +1,5 @@
-# Use official PHP 8.0 image with Apache
-FROM php:8.0-apache
+# Use official PHP 8.2 FPM image
+FROM php:8.2-fpm
 
 # Set working directory
 WORKDIR /var/www/html
@@ -14,36 +14,34 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
-    && docker-php-ext-install pdo pdo_mysql zip mbstring gd
+    && docker-php-ext-install pdo pdo_mysql zip mbstring gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
-
-# Make Apache serve the Laravel public folder
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/apache2.conf
-
-# Copy composer
+# Copy Composer from official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy project files
+# Copy application code
 COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Copy .env file (make sure you have it in the repo)
-# COPY .env .env
-# Or set environment variables in Render dashboard
+# Clear Laravel caches
+RUN php artisan config:clear \
+    && php artisan route:clear \
+    && php artisan view:clear
 
-# Generate Laravel key
-RUN php artisan key:generate
+# Generate APP_KEY using environment variable if not set
+# If APP_KEY exists in Render env, Laravel uses it automatically
+RUN if [ -z "$APP_KEY" ]; then \
+        php artisan key:generate --show | xargs -I {} echo "APP_KEY={}" >> .env ; \
+    fi
 
-# Give proper permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Set proper permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Expose port 10000 (Render will map $PORT)
+# Expose port for Render
 EXPOSE 10000
 
-# Start Laravel using built-in server (easier for Render)
+# Start Laravel with built-in server (Render maps $PORT)
 CMD php artisan serve --host=0.0.0.0 --port=$PORT
