@@ -120,26 +120,26 @@ public function store(Request $request, StripeService $stripe)
         ];
 
         // ✅ OPTION B: Stripe only
-        if ($validated['payment_method'] === 'Stripe') {
-
-    $exchangeRate = 150;
+       if ($validated['payment_method'] === 'Stripe') {
+    $exchangeRate = 150; // KES → USD
     $usdAmount = round($totalPriceKes / $exchangeRate, 2);
 
     if ($usdAmount < 0.5) {
         throw new \Exception('Amount too small for Stripe');
     }
 
-    $paymentIntent = $stripe->createPaymentIntent((int) ($usdAmount * 100));
+    $paymentIntent = $stripe->createPaymentIntent((int)($usdAmount * 100));
 
     $order->update([
         'stripe_payment_intent_id' => $paymentIntent->id,
         'stripe_client_secret' => $paymentIntent->client_secret,
+        'payment_status' => 'pending',
+        'status' => 'pending_payment',
     ]);
 
-    $response['amount_kes'] = $totalPriceKes;
-    $response['amount_usd'] = $usdAmount;
     $response['client_secret'] = $paymentIntent->client_secret;
 }
+
 
 
         // Clear cart

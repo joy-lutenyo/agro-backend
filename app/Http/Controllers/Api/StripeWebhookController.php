@@ -34,19 +34,19 @@ class StripeWebhookController extends Controller
 
         // ✅ Handle successful payment
         if ($event->type === 'payment_intent.succeeded') {
+    $paymentIntent = $event->data->object;
+    $order = Order::where('stripe_client_secret', $paymentIntent->client_secret)->first();
+    if ($order) {
+        $order->update([
+            'payment_status' => 'paid',
+            'status' => 'confirmed',
+        ]);
 
-            $paymentIntent = $event->data->object;
-            $clientSecret = $paymentIntent->client_secret;
+        // Optionally: send confirmation email
+        Mail::to($order->user->email)->send(new OrderPlaced($order));
+    }
+}
 
-            $order = Order::where('stripe_client_secret', $clientSecret)->first();
-
-            if ($order) {
-                $order->update([
-                    'payment_status' => 'paid',
-                    'status' => 'confirmed',
-                ]);
-            }
-        }
 
         // ❌ Handle failed payment
         if ($event->type === 'payment_intent.payment_failed') {
