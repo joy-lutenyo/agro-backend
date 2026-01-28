@@ -1,5 +1,5 @@
-# Use official PHP 8.2 FPM image
-FROM php:8.2-fpm
+# Use official PHP image with Apache
+FROM php:8.2-apache
 
 # Set working directory
 WORKDIR /var/www/html
@@ -10,38 +10,38 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     libonig-dev \
-    libpq-dev \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
-    && docker-php-ext-install pdo pdo_mysql zip mbstring gd \
+    mariadb-client \
+    && docker-php-ext-install pdo_mysql zip mbstring gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy Composer from official image
+# Enable Apache rewrite module
+RUN a2enmod rewrite
+
+# Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy application code
+# Copy Laravel application
 COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Clear Laravel caches
-RUN php artisan config:clear \
-    && php artisan route:clear \
-    && php artisan view:clear
-
-# Generate APP_KEY using environment variable if not set
-# If APP_KEY exists in Render env, Laravel uses it automatically
-RUN if [ -z "$APP_KEY" ]; then \
-        php artisan key:generate --show | xargs -I {} echo "APP_KEY={}" >> .env ; \
-    fi
-
-# Set proper permissions
+# Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Expose port for Render
-EXPOSE 10000
+# Clear Laravel caches and cache routes
+RUN php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
-# Start Laravel with built-in server (Render maps $PORT)
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+# Use public folder as web root
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+
+# Expose port (Render uses $PORT automatically)
+EXPOSE 80
+
+# Start Apache in foreground
+CMD ["apache2-foreground"]
