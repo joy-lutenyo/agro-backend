@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\CropController;
+use App\Http\Controllers\Api\SocialAuthController;
 
 
 
@@ -20,6 +21,10 @@ use App\Http\Controllers\Api\CropController;
 */
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Google OAuth Routes
+Route::get('/auth/google/redirect', [SocialAuthController::class, 'redirect']);
+Route::get('/auth/google/callback', [SocialAuthController::class, 'callback']);
 
 
 
