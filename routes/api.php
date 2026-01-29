@@ -10,10 +10,6 @@ use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\CropController;
-use App\Http\Controllers\Api\AiController;
-use App\Http\Controllers\MpesaController;
-use App\Http\Controllers\MachineryBookingController;
-use App\Http\Controllers\ChatBotController;
 
 
 
@@ -26,7 +22,6 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 
-Route::post('/chatbot', [ChatBotController::class, 'chat']);
 
 
 /*
@@ -34,6 +29,7 @@ Route::post('/chatbot', [ChatBotController::class, 'chat']);
 | PRODUCT ROUTES (PUBLIC READ)
 |--------------------------------------------------------------------------
 */
+
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 
@@ -114,28 +110,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::patch('/orders/{id}/deliver', [OrderController::class, 'markDelivered']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | AI CROP DOCTOR
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/crop-doctor', [AiController::class, 'diagnose']);
+   
 
-    /*
-    |--------------------------------------------------------------------------
-    | MPESA
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/mpesa/stk-push', [MpesaController::class, 'stkPush']);
-    Route::post('/mpesa/callback', [MpesaController::class, 'handleCallback']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | MACHINERY BOOKING
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/machinery/book', [MachineryBookingController::class, 'book']);
-
+   
+    
     /*
     |--------------------------------------------------------------------------
     | LOGOUT
